@@ -1,4 +1,6 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const app = express();
 const port = 8000;
 const cors = require("cors");
@@ -22,6 +24,16 @@ require("dotenv").config({
   path: require("path").join(__dirname, ".env"),
 });
 
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // or set your frontend URL
+    methods: ["GET", "POST"],
+  },
+});
+
+app.set("io", io);
+
 try {
   connectDB();
 } catch (error) {
@@ -38,6 +50,8 @@ const allUsers = require("./routes/allUsers/allUsersRouter");
 const jobs = require("./routes/jobs/jobsRouter");
 const jobInsights = require("./routes/jobs/jobInsightsRouter");
 const cv = require("./routes/teacher/teacherCVrouter");
+const discussion = require("./routes/discussion/discussionRouter");
+const reply = require("./routes/discussion/replyRouter");
 
 app.use("/auth", auth);
 app.use("/school", school);
@@ -47,6 +61,8 @@ app.use("/allUsers", allUsers);
 app.use("/jobs", jobs);
 app.use("/job-insights", jobInsights);
 app.use("/cv", cv);
+app.use("/discussion", discussion);
+app.use("/reply", reply);
 
 app.use((err, req, res, next) => {
   console.error(err); // so you see the full error in your console
@@ -54,6 +70,14 @@ app.use((err, req, res, next) => {
     success: false,
     message: err.message || "Internal Server Error",
     // stack: err.stack  // include in dev if you like
+  });
+});
+
+io.on("connection", (socket) => {
+  console.log("New client connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
   });
 });
 
