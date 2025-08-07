@@ -14,6 +14,7 @@ const {
 } = require("../../controllers/jobs/jobsController");
 const {
   applyToJob,
+  applyToJobWithUpload,
   getApplicationsForJob,
   getMyApplications,
   getApplicationById,
@@ -63,11 +64,15 @@ router.patch("/:id/approve", verifyToken, isAdmin, approveJob);
 router.get("/admin/stats", verifyToken, isAdmin, getJobStats);
 
 // --- new: apply & list applications ---
+// New CV management application route (no file upload required)
+router.post("/apply/:id", verifyToken, applyToJob);
+
+// Legacy application route with file upload (for backward compatibility)
 router.post(
-  "/apply/:id",
+  "/apply/:id/upload",
   verifyToken,
   upload.single("resume"), // now sends file straight to Cloudinary
-  applyToJob
+  applyToJobWithUpload
 );
 router.get("/:id/applications", verifyToken, getApplicationsForJob);
 
@@ -95,5 +100,9 @@ router.get("/saved/count", verifyToken, getSavedJobsCount);
 router.get("/saved/expired", verifyToken, getExpiredSavedJobs);
 router.delete("/saved/expired", verifyToken, unsaveAllExpiredJobs);
 router.get("/saved/expired/count", verifyToken, getExpiredSavedJobsCount);
+
+// --- CV Management Routes ---
+const cvManagementRouter = require("./cvManagementRouter");
+router.use("/cv", cvManagementRouter);
 
 module.exports = router;
